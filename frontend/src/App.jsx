@@ -84,12 +84,21 @@ function App() {
           password: "",
         });
       }
-    } catch (error) {
-      setMessage(
-        error.response?.data?.detail ||
-          "Something went wrong."
-      );
-    }
+    }  catch (error) {
+  const detail = error.response?.data?.detail;
+
+  if (Array.isArray(detail)) {
+    const message = detail
+      .map((item) => item.msg || "Invalid input")
+      .join(", ");
+
+    setMessage(message);
+  } else if (typeof detail === "string") {
+    setMessage(detail);
+  } else {
+    setMessage("Something went wrong.");
+  }
+}
   };
 
   // =========================
