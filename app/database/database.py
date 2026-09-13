@@ -1,4 +1,5 @@
-﻿from typing import Generator
+﻿import os
+from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -6,24 +7,39 @@ from sqlalchemy.orm import sessionmaker
 from app.database.base import Base
 from app.models.user import User
 from app.models.resume import Resume
+from app.models.analysis import Analysis
 
 
-# SQLite database URL
-SQLALCHEMY_DATABASE_URL = "sqlite:///./hiresense.db"
-
-
-# Create database engine
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./hiresense.db"
 )
 
+# Render PostgreSQL may provide a postgres:// URL.
+# SQLAlchemy requires postgresql://.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgres://",
+        "postgresql://",
+        1
+    )
 
-# Create session factory
+if DATABASE_URL.startswith("postgresql://"):
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False}
+    )
+
+
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    bind=engine,
+    bind=engine
 )
 
 
@@ -34,3 +50,4 @@ def get_db() -> Generator:
         yield db
     finally:
         db.close()
+        
